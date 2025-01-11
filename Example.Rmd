@@ -58,7 +58,7 @@ knitr::kable(head(interaction_network), format="html")  %>% kable_styling("strip
 - Convert the interaction data into a graph structure
 - Use the combined score as edge weights
 
-```{r}
+```{r, warning=FALSE}
 g <- graph_from_data_frame(d = interaction_network, directed = FALSE, vertices = NULL)
 E(g)$weight <- interaction_network$Combined_Score
 components <- igraph::clusters(g, mode="weak")
