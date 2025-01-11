@@ -5,7 +5,7 @@ library(PRROC)
 
 # Load pre-computed Laplacian matrix and dataset files
 load("K_laplacian.Rdata")
-GO_data <- read.csv("go_pathway_withgene.csv")[,-1]
+GO_data <- read.csv("GO_pathway.csv")[,-1]
 ppi_data <- read.csv("ppi_with_genes.csv")[,-c(1, 2)]
 
 # Filter GO data based on level
