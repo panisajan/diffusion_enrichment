@@ -713,13 +713,8 @@ MRPS35
 </ul>
 <pre class="r"><code>g &lt;- graph_from_data_frame(d = interaction_network, directed = FALSE, vertices = NULL)
 E(g)$weight &lt;- interaction_network$Combined_Score
-components &lt;- igraph::clusters(g, mode=&quot;weak&quot;)</code></pre>
-<pre><code>## Warning: `clusters()` was deprecated in igraph 2.0.0.
-## ℹ Please use `components()` instead.
-## This warning is displayed once every 8 hours.
-## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-## generated.</code></pre>
-<pre class="r"><code>largest_cluster &lt;- which.max(components$csize)
+components &lt;- igraph::clusters(g, mode=&quot;weak&quot;)
+largest_cluster &lt;- which.max(components$csize)
 large_nodes &lt;- V(g)[components$membership == largest_cluster]
 g &lt;- induced_subgraph(g, large_nodes)
 is_connected(g)</code></pre>
