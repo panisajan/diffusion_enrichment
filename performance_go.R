@@ -16,7 +16,7 @@ go <- read.csv("go_pathway.csv", header = TRUE)
 go = subset(go,go$Level <= 3)
 
 # Parameters
-n_iterations <- 50
+n_iterations <- 100
 
 # Main loop over pathways
 for (k in 1:94) {
