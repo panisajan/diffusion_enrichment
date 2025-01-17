@@ -6,21 +6,19 @@ library(PRROC)
 
 # Load data
 load("K_laplacian.Rdata")
+load("K_normlap.Rdata")
+load("g.Rdata")
+load("transition_matrix.Rdata")
 
+# Load function
+source("rwr.R")
 kegg <- read.csv("kegg_pathway.csv", header = TRUE)
-ppi_data <- read.csv("ppi_with_genes.csv")[, -c(1, 2)]  # Remove unnecessary columns
-ppi_data$weight <- ppi_data$combined_score
-ppi_data <- ppi_data[, -1]  # Drop the original `combined_score` column
-
-# Create graph
-g <- graph_from_data_frame(d = ppi_data, directed = FALSE)
-E(g)$weight <- ppi_data$weight
 
 # Parameters
 n_iterations <- 100
 
 # Main loop over pathways
-for (k in 1:length(kegg$X)) {  # Adjust range as needed
+for (k in 1:170) {
   print(k)
   
   # Extract pathway data
@@ -40,10 +38,18 @@ for (k in 1:length(kegg$X)) {  # Adjust range as needed
   # Initialize results dataframe
   results <- data.frame(
     index = integer(max_iterations),
-    mean_auc_diff = numeric(max_iterations),
-    var_auc_diff = numeric(max_iterations),
-    mean_aupr_diff = numeric(max_iterations),
-    var_aupr_diff = numeric(max_iterations),
+    mean_auc_lc = numeric(max_iterations),
+    var_auc_lc = numeric(max_iterations),
+    mean_aupr_lc = numeric(max_iterations),
+    var_aupr_lc = numeric(max_iterations),
+    mean_auc_ht = numeric(max_iterations),
+    var_auc_ht = numeric(max_iterations),
+    mean_aupr_ht = numeric(max_iterations),
+    var_aupr_ht = numeric(max_iterations),
+    mean_auc_rwr = numeric(max_iterations),
+    var_auc_rwr = numeric(max_iterations),
+    mean_aupr_rwr = numeric(max_iterations),
+    var_aupr_rwr = numeric(max_iterations),
     mean_auc_neigh = numeric(max_iterations),
     var_auc_neigh = numeric(max_iterations),
     mean_aupr_neigh = numeric(max_iterations),
@@ -59,12 +65,17 @@ for (k in 1:length(kegg$X)) {  # Adjust range as needed
   # Iteration over seed percentages
   for (j in seq_len(max_iterations)) {
     num_seeds <- if (num_test_data > 100) percentages[j] else j
-    auc_diff_values <- numeric(n_iterations)
+    auc_lc_values <- numeric(n_iterations)
+    auc_ht_values <- numeric(n_iterations)
+    auc_rwr_values <- numeric(n_iterations)
     auc_neigh_values <- numeric(n_iterations)
     auc_neigh2_values <- numeric(n_iterations)
-    aupr_diff_values <- numeric(n_iterations)
+    aupr_lc_values <- numeric(n_iterations)
+    aupr_ht_values <- numeric(n_iterations)
+    aupr_rwr_values <- numeric(n_iterations)
     aupr_neigh_values <- numeric(n_iterations)
     aupr_neigh2_values <- numeric(n_iterations)
+    
     
     # Randomized iterations
     for (i in seq_len(n_iterations)) {
@@ -75,18 +86,31 @@ for (k in 1:length(kegg$X)) {  # Adjust range as needed
       F_diffusion <- K %*% y
       F_dif <- F_diffusion[, 1]
       
+      F_heat <- K2 %*% y
+      F_ht <- F_heat[, 1]
+      
+      rwr_scores <- rwr(transition_matrix, start_genes = seed_gene, restart_prob = 0.3)
+      
       # Neighborhood lists
       neighbors_list <- unique(unlist(neighbors(g, seed_gene, mode = "all")))
       neighbors_list2 <- unique(unlist(neighbors(g, neighbors_list, mode = "all")))
       
       # Scores for different methods
-      neigh_scores <- as.numeric(V(g)$name %in% c(seed_gene, neighbors_list))
-      neigh_scores2 <- as.numeric(V(g)$name %in% c(seed_gene, neighbors_list, neighbors_list2))
+      neigh_scores <- as.numeric(V(g)$name %in% c(seed_gene, as_ids(neighbors_list)))
+      neigh_scores2 <- as.numeric(V(g)$name %in% c(seed_gene, as_ids(neighbors_list), as_ids(neighbors_list2)))
       
       # Calculate AUC and AUPR
-      roc_diff <- roc(test, F_dif)
-      auc_diff_values[i] <- auc(roc_diff)
-      aupr_diff_values[i] <- pr.curve(scores.class0 = F_dif[test == 1], scores.class1 = F_dif[test == 0], curve = TRUE)$auc.integral
+      roc_lc <- roc(test, F_dif)
+      auc_lc_values[i] <- auc(roc_lc)
+      aupr_lc_values[i] <- pr.curve(scores.class0 = F_dif[test == 1], scores.class1 = F_dif[test == 0], curve = TRUE)$auc.integral
+      
+      roc_ht <- roc(test, F_ht)
+      auc_ht_values[i] <- auc(roc_ht)
+      aupr_ht_values[i] <- pr.curve(scores.class0 = F_ht[test == 1], scores.class1 = F_ht[test == 0], curve = TRUE)$auc.integral
+      
+      roc_rwr <- roc(test, rwr_scores)
+      auc_rwr_values[i] <- auc(roc_rwr)
+      aupr_rwr_values[i] <- pr.curve(scores.class0 = rwr_scores[test == 1], scores.class1 = rwr_scores[test == 0], curve = TRUE)$auc.integral
       
       roc_neigh <- roc(test, neigh_scores)
       auc_neigh_values[i] <- auc(roc_neigh)
@@ -100,10 +124,18 @@ for (k in 1:length(kegg$X)) {  # Adjust range as needed
     # Store results
     results[j, ] <- data.frame(
       index = j,
-      mean_auc_diff = mean(auc_diff_values),
-      var_auc_diff = var(auc_diff_values),
-      mean_aupr_diff = mean(aupr_diff_values),
-      var_aupr_diff = var(aupr_diff_values),
+      mean_auc_lc = mean(auc_lc_values),
+      var_auc_lc = var(auc_lc_values),
+      mean_aupr_lc = mean(aupr_lc_values),
+      var_aupr_lc = var(aupr_lc_values),
+      mean_auc_ht = mean(auc_ht_values),
+      var_auc_ht = var(auc_ht_values),
+      mean_aupr_ht = mean(aupr_ht_values),
+      var_aupr_ht = var(aupr_ht_values),
+      mean_auc_rwr = mean(auc_rwr_values),
+      var_auc_rwr = var(auc_rwr_values),
+      mean_aupr_rwr = mean(aupr_rwr_values),
+      var_aupr_rwr = var(aupr_rwr_values),
       mean_auc_neigh = mean(auc_neigh_values),
       var_auc_neigh = var(auc_neigh_values),
       mean_aupr_neigh = mean(aupr_neigh_values),
@@ -119,5 +151,7 @@ for (k in 1:length(kegg$X)) {  # Adjust range as needed
   
   # Save results
   pathway_id_no_colon <- gsub(":", "_", pathway_id)
-  write.csv(results, paste0(pathway_id_no_colon, "_kegg_new.csv"), row.names = FALSE)
+  #write.csv(results, paste0(pathway_id_no_colon, "_kegg_new.csv"), row.names = FALSE)
+  write.csv(results, paste0(pathway_id_no_colon, "_kegg_5method.csv"), row.names = FALSE)
 }
+
