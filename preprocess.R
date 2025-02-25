@@ -5,11 +5,14 @@ library(diffuStats)
 library(igraph)
 library(pROC)
 library(PRROC)
+library(STRINGdb)
+library(gprofiler2)
 
 # Load data
-load("K_laplacian.Rdata")
+string_db <- STRINGdb$new(version = "12.0", species = 9606, score_threshold = 900)
+all_genes <- string_db$get_proteins()
 
-kegg <- read.csv("kegg_pathway.csv", header = TRUE)
+# kegg <- read.csv("kegg_pathway.csv", header = TRUE)
 
 data <- data.frame(gene = all_genes$preferred_name)
 mapped_data <- string_db$map(data, "gene", removeUnmappedRows = FALSE)
