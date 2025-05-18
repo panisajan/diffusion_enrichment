@@ -29,7 +29,6 @@ head(interaction_network)
 
 
 g <- graph_from_data_frame(d = interaction_network, directed = FALSE, vertices = NULL)
-E(g)$weight <- interaction_network$Combined_Score
 components <- igraph::clusters(g, mode="weak")
 largest_cluster <- which.max(components$csize)
 large_nodes <- V(g)[components$membership == largest_cluster]
@@ -39,16 +38,16 @@ is_connected(g)
 g <- simplify(g)
 
 K <- regularisedLaplacianKernel(g,sigma2=1, add_diag=1,normalized=FALSE)
-save(K,file = "K_laplacian.Rdata")
+# save(K,file = "K_laplacian.Rdata")
 
 K2 <- regularisedLaplacianKernel(g,sigma2=1,normalized=TRUE)
-save(K2,file = "K_normlap.Rdata")
-save(g,file = "g.Rdata")
+# save(K2,file = "K_normlap.Rdata")
+# save(g,file = "g.Rdata")
 
-load("g.Rdata")
+# load("g.Rdata")
 
 adj_matrix = as_adjacency_matrix(g)
 # Normalize the adjacency matrix to create a transition matrix
 transition_matrix <- t(apply(adj_matrix, 1, function(row) row / sum(row)))
 
-save(transition_matrix,file = "transition_matrix.Rdata")
+# save(transition_matrix,file = "transition_matrix.Rdata")
