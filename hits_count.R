@@ -1,18 +1,7 @@
 
-setwd("C:/Users/Asus/Desktop/AomamxAsus/diffusion_neighbor/")
-
-# load("K_Laplacian.Rdata")
-# load("K_normlap.Rdata")
 load("g.Rdata")
-# load("transition_matrix.Rdata")
-# source("rwr.R")
 
-#library(GOxploreR)
 library("org.Hs.eg.db")
-# library(AnnotationDbi)
-# library(ggplot2)
-# library(GOSemSim)
-# library(plyr)
 library(dplyr)
 library(igraph)
 library(KEGGREST)
